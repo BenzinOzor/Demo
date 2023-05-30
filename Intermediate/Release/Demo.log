@@ -1,0 +1,77 @@
+﻿  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Release
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Release"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\FrameWork_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\LuaPlus5.1_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-audio-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-graphics-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-network-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-system-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-window-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\tinyxml2.dll
+  10 fichier(s) copié(s)
+  demo.cpp
+  main.cpp
+  Technology.cpp
+  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Release
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Release"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\FrameWork_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\LuaPlus5.1_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-audio-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-graphics-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-network-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-system-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-window-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\tinyxml2.dll
+  10 fichier(s) copié(s)
+  Generating code
+  All 110 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  Demo.vcxproj -> E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Release\Demo.exe
+  Performing Custom Build Step
+  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Release
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Release"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\FrameWork_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\LuaPlus5.1_r.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-audio-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-graphics-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-network-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-system-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\sfml-window-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Release\tinyxml2.dll
+  10 fichier(s) copié(s)

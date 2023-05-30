@@ -1,0 +1,34 @@
+<Resources Path="../../Data/">
+
+	<Folder Path="DemoFolder/">
+		<Animation Name="BnZ" Path="Anims.anm" Group="demo"/>
+		<Animation Name="Wumpa" Path="Anims.anm" Group="demo"/>
+		<Animation Name="WalkRight" Path="Anims.anm" Group="demo"/>
+
+		<Folder Path="Sounds/">
+			<Sound Name="demoSound" Path="demoSound.ogg"/>
+		</Folder>
+
+		<Picture Name="demoSprite" Path="demoSprite.png" Group="demo"/>
+	</Folder>
+	
+	
+	<!--Display resources-->
+	<Folder Path="Display/">
+
+		<!--Fonts-->
+		<Folder Path="Fonts/">
+			<Font Name="defaultFont" Path="defaultFont.ttf"/>
+		</Folder>
+	</Folder>
+
+	<!--Audio resources-->
+	<Folder Path="Audio/">
+
+		<!--Musics-->
+		<Folder Path="Musics/">
+			<Music Name="demoMusic" Path="demoMusic.ogg" Group="demo"/>
+		</Folder>
+
+	</Folder>
+</Resources>

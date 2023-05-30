@@ -1,0 +1,80 @@
+﻿  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Debug
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Debug"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\ExternalWrapper_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\FrameWork_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\Ijwhost.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\LuaPlus5.1_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\openal32.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-audio-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-graphics-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-network-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-system-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-window-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\tinyxml2d.dll
+  13 fichier(s) copiÚ(s)
+  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Debug
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Debug"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\ExternalWrapper_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\FrameWork_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\Ijwhost.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\LuaPlus5.1_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\openal32.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-audio-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-graphics-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-network-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-system-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-window-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\tinyxml2d.dll
+  13 fichier(s) copiÚ(s)
+  Demo.vcxproj -> E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Debug\Demo.exe
+  Performing Custom Build Step
+  =====================================
+  Copying dynamic libs from FrameWork dependencies to Demo binaries...
+  Solution dir : E:\Prog\SFML\FaZoN\
+  Source project category : FrameWork
+  Source project name : FrameWork
+  Destination project category : Samples
+  Destination project name : Demo
+  Configuration : Debug
+  .
+  Source path : "E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug"
+  Destination path : "E:\Prog\SFML\FaZoN\Samples\Demo\Bin\Debug"
+  ....................................
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\ExternalWrapper_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\fmod.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\FrameWork_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\Ijwhost.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\lua53.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\LuaPlus5.1_d.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\openal32.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-audio-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-graphics-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-network-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-system-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\sfml-window-d-2.dll
+  E:\Prog\SFML\FaZoN\FrameWork\FrameWork\Dependencies\DynamicLibs\Debug\tinyxml2d.dll
+  13 fichier(s) copiÚ(s)
