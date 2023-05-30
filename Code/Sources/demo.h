@@ -135,7 +135,7 @@ public:
 	fzn::Animation wumpa;		//Another demonstration animation
 	fzn::Animation walkRight;
 	sf::Sound sound;				//Demonstration sound
-	sf::Music* music; 
+	sf::Music* music;
 	sf::Text text;					//Demonstration text
 	sf::Text fToFlip;				//Instruction text
 	sf::Sprite sprite;				//Demonstration sprite
