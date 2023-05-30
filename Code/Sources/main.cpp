@@ -16,7 +16,7 @@
 int main()
 {
 	fzn::FazonCore::CreateInstance( { "Demo", FZNProjectType::Application } );
-
+	//TEST   d
 	g_pFZN_Core->GreetingMessage();
 	g_pFZN_Core->ConsoleTitle( g_pFZN_Core->GetProjectName().c_str() );
 	g_pFZN_Core->SetConsolePosition( sf::Vector2i( 10, 10 ) );
