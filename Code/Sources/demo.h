@@ -140,7 +140,7 @@ public:
 	sf::Text fToFlip;				//Instruction text
 	sf::Sprite sprite;				//Demonstration sprite
 
-	fzn::ProgressBar progressBar; 
+	fzn::ProgressBar progressBar;
 
 	fzn::Sound testRapBot[4];
 	int iCurrentSound;
