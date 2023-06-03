@@ -245,9 +245,11 @@
   <ItemGroup>
     <ClCompile Include="Sources\demo.cpp" />
     <ClCompile Include="Sources\main.cpp" />
+    <ClCompile Include="Sources\Physics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\demo.h" />
+    <ClInclude Include="Sources\Physics.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Data\XMLFiles\Resources" />

@@ -11,7 +11,7 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 #include "demo.h"
-
+#include "Physics.h"
 
 int main()
 {
@@ -48,6 +48,7 @@ int main()
 	//Changing the titles of the window and the console
 	g_pFZN_WindowMgr->SetWindowTitle( g_pFZN_Core->GetProjectName().c_str() );
 
-	Demo fznDemo;				// Creation of the demo class
+	//Demo fznDemo;				// Creation of the demo class
+	PhysicsTest oPhyTest;
 	g_pFZN_Core->GameLoop();	// Game loop (add callbacks to your functions so they can be called in there, see Tools.h / Tools.cpp)
 }
