@@ -13,7 +13,7 @@ RigidBody::RigidBody()
 {
 }
 
-void RigidBody::Update( float _fGravity )
+void RigidBody::Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies )
 {
 	if( m_bUpdateLastPos )
 		m_vLastPos = GetPosition();
@@ -25,6 +25,8 @@ void RigidBody::Update( float _fGravity )
 		FZN_LOG( "Velocity: %f", m_vVelocity.y );
 	}
 	m_vVelocity += sf::Vector2f( 0.f, _fGravity ) * FrameTime;
+
+	_ComputeMovementBounds();
 
 	if( m_bUpdateLastPos )
 		fLastPosLength = fzn::Math::VectorLength( { GetPosition() - m_vLastPos } );
@@ -56,6 +58,15 @@ void RigidBody::Display()
 			fzn::Tools::DrawLine( vMiddlePoint, vMiddlePoint + m_aNormals[ iPoint ] * 3.f, sf::Color::Magenta );
 		}
 	}
+
+	sf::RectangleShape oNextPosBounds( { m_oMouvementBounds.width, m_oMouvementBounds.height } );
+	oNextPosBounds.setFillColor( { 0, 0, 0, 0 } );
+	oNextPosBounds.setOutlineColor( { 255, 255, 255, 200 } );
+	oNextPosBounds.setOutlineThickness( 1.f );
+	oNextPosBounds.setPosition( m_oMouvementBounds.left, m_oMouvementBounds.top );
+
+	g_pFZN_WindowMgr->Draw( oNextPosBounds );
+
 }
 
 void RigidBody::OnEvent()
@@ -74,9 +85,46 @@ void RigidBody::OnEvent()
 	}
 }
 
-bool RigidBody::IsColliding( const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint ) const
+bool RigidBody::IsColliding( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const
 {
-	return IsColliding( GetPosition(), _rRigidBody, _rCollisionPoint );
+	if( fzn::Tools::CollisionAABBAABB( m_oMouvementBounds, _rRigiBody.m_oMouvementBounds ) == false )
+		return false;
+
+	sf::ConvexShape oSweptBounds( m_pShape->getPointCount() + 2 );	// Adding two points because they will be the ones holing the swept bounds together
+
+	const sf::Vector2f vBasePosition{ GetPosition() };
+	const sf::Vector2f vNextPosition{ vBasePosition + m_vVelocity * FrameTime };
+
+	const sf::FloatRect oBaseBounds{ m_pShape->getGlobalBounds() };
+
+	sf::ConvexShape oNextShape = std::move( fzn::Tools::ConvertShapePtrToConvexShape( m_pShape ) );
+	sf::ConvexShape oShape( oNextShape );
+
+	oNextShape.setPosition( vNextPosition );
+
+	const sf::Vector2f vTranslation = oNextShape.getPosition() - oShape.getPosition();
+
+	/*
+	* vMiddlePoint.x = ( vPointA.x + vPointB.x ) / 2.f;
+	vMiddlePoint.y = ( vPointA.y + vPointB.y ) / 2.f;
+	*/
+
+	const sf::Vector2f vMiddlePoint{ ( vBasePosition.x + vNextPosition.x ) / 2.f, ( vBasePosition.y + vNextPosition.y ) / 2.f };
+	const sf::Vector2f vTranslationNormal{ vTranslation.y, -vTranslation.x };
+
+	const sf::Transform& rTransform = oShape.getTransform();
+
+	auto GetStartEndPoints = []( const sf::Vector2f& vNormal, const sf::ConvexShape& _rShape, int& _iStartPoint, int& _iEndPoint )
+	{
+	};
+
+	/*for( int iPoint = 0; iPoint < oShape.getPointCount(); ++iPoint )
+	{
+		fDot = fzn::Math::VectorDot( _vNormal, rTransform.transformPoint( oShape.getPoint( iPoint ) ) );
+
+		SupThenAffect( _fMinProj, fDot );
+		InfThenAffect( _fMaxProj, fDot );
+	}*/
 }
 
 bool RigidBody::IsColliding_SAT( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const
@@ -93,7 +141,7 @@ bool RigidBody::IsColliding_SAT( const RigidBody& _rRigiBody, CollisionPoint& _r
 		float fDot{ 0.f };
 
 		const sf::Transform& rTransform = _pShape->getTransform();
-
+		
 		for( int iPoint = 0; iPoint < _pShape->getPointCount(); ++iPoint )
 		{
 			fDot = fzn::Math::VectorDot( _vNormal, rTransform.transformPoint( _pShape->getPoint( iPoint ) ) );
@@ -158,166 +206,6 @@ bool RigidBody::HasVelocity() const
 	return fzn::Math::VectorLengthSq( m_vVelocity ) > 0.f;
 }
 
-bool RigidBody::_Sweep()
-{
-	CollisionPoint oCollision{};
-
-	const sf::Vector2f vBasePos = GetPosition();
-
-	SetPosition( GetPosition() + m_vVelocity * FrameTime );
-
-	if( g_pPhysics->GetGround().IsColliding( *this, oCollision ) )
-	{
-		const sf::Vector2f vVelocityDir = fzn::Math::VectorNormalization( m_vVelocity );
-		const float fTotalLength = fzn::Math::VectorLength( m_vVelocity * FrameTime );
-
-		float fCurrentLength = 1.f;
-
-		while( fCurrentLength <= fTotalLength )
-		{
-			SetPosition( vBasePos + vVelocityDir * fCurrentLength );
-
-			if( g_pPhysics->GetGround()._IsCollidingDuringSweep( *this, oCollision, 1.f ) )
-			{
-				m_vVelocity = fzn::Math::VectorNormalization( GetPosition() - oCollision.m_vContactPoint ) * ( fzn::Math::Min( 0.f, fTotalLength - fCurrentLength ) );
-				return true;
-			}
-
-			if( fCurrentLength < fTotalLength )
-				fCurrentLength = fzn::Math::Min( fCurrentLength + 1.f, fTotalLength );
-			else
-				++fCurrentLength;
-		}
-	}
-
-	SetPosition( vBasePos );
-	return false;
-}
-
-bool RigidBody::_IsCollidingDuringSweep( const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint, float _fRadius ) const
-{
-	if( m_pShape == nullptr || _rRigidBody.m_pShape == nullptr )
-		return false;
-
-	if( _rRigidBody.m_pShape->getPointCount() < 3 || m_pShape->getPointCount() < 3 )
-		return false;
-
-	const sf::Shape& rThisShape = *m_pShape;
-	const sf::Shape& rOtherShape = *_rRigidBody.m_pShape;
-
-	const sf::Transform& rThisTransform = rThisShape.getTransform();
-	const sf::Transform& rOtherTransform = rOtherShape.getTransform();
-
-	int iNextPoint{ 0 };
-	sf::Vector2f vSegment{ 0.f, 0.f };
-	sf::CircleShape oTestedPoint( _fRadius );
-	oTestedPoint.setOrigin( _fRadius, _fRadius );
-
-	for( int iPoint = 0; iPoint < rThisShape.getPointCount(); ++iPoint )
-	{
-		iNextPoint = (iPoint + 1) % rThisShape.getPointCount();
-
-		vSegment = { rThisShape.getPoint( iNextPoint ) - rThisShape.getPoint( iPoint ) };
-
-		for( int iOtherPoint = 0; iOtherPoint < rOtherShape.getPointCount(); ++iOtherPoint )
-		{
-			oTestedPoint.setPosition( rOtherTransform.transformPoint( rOtherShape.getPoint( iOtherPoint ) ) );
-
-			if( fzn::Math::VectorLengthSq( oTestedPoint.getPosition() - rThisShape.getPoint( iPoint ) ) <= fzn::Math::Square( _fRadius ) )
-			{
-				_rCollisionPoint.m_vContactPoint = rThisShape.getPoint( iPoint );
-				_rCollisionPoint.m_vCollisionResponse = oTestedPoint.getPosition() - rThisShape.getPoint( iPoint );
-				return true;
-			}
-
-			if( fzn::Math::VectorLengthSq( oTestedPoint.getPosition() - rThisShape.getPoint( iNextPoint ) ) <= fzn::Math::Square( _fRadius ) )
-			{
-				_rCollisionPoint.m_vContactPoint = rThisShape.getPoint( iNextPoint );
-				_rCollisionPoint.m_vCollisionResponse = oTestedPoint.getPosition() - rThisShape.getPoint( iNextPoint );
-				return true;
-			}
-
-			const sf::Vector2f vLineToCircle = fzn::Math::VectorNormalization( oTestedPoint.getPosition() - rThisShape.getPoint( iPoint ) );
-
-			const float fDot = fzn::Math::VectorDot( vSegment, vLineToCircle );
-
-			if( fDot < 0.f )
-				continue;
-
-			sf::Vector2f vProjection = rThisShape.getPoint( iPoint ) + vLineToCircle * fDot;
-
-			if( fzn::Math::VectorLengthSq( vProjection - oTestedPoint.getPosition() ) <= fzn::Math::Square( _fRadius ) )
-			{
-				fzn::Math::VectorNormalize( vSegment );
-				vSegment *= fDot;
-
-				_rCollisionPoint.m_vContactPoint = rThisShape.getPoint( iPoint ) + vSegment;
-				_rCollisionPoint.m_vCollisionResponse = oTestedPoint.getPosition() - _rCollisionPoint.m_vContactPoint;
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-bool RigidBody::IsColliding( const sf::Vector2f& _vRigidBodyTestPos, const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint ) const
-{
-	if( m_pShape == nullptr || _rRigidBody.m_pShape == nullptr )
-		return false;
-
-	if( _rRigidBody.m_pShape->getPointCount() < 3 || m_pShape->getPointCount() < 3 )
-		return false;
-
-	const sf::Vector2f vBasePos = GetPosition();
-
-	sf::Shape& rThisShape = *m_pShape;
-	const sf::Shape& rOtherShape = *_rRigidBody.m_pShape;
-
-	rThisShape.setPosition( _vRigidBodyTestPos );
-
-	const sf::Transform& rThisTransform = rThisShape.getTransform();
-	const sf::Transform& rOtherTransform = rOtherShape.getTransform();
-
-	float fLastCross{ 0.f };
-	float fCross{ 0.f };
-	int iOBBNextPoint{ 0 };
-	bool bOtherPointInShape{ false };
-
-	for( int iOtherPoint = 0; iOtherPoint < rOtherShape.getPointCount(); ++iOtherPoint )
-	{
-		fLastCross = fzn::Tools::Cross2D( rThisTransform.transformPoint( rThisShape.getPoint( 0 ) ), rThisTransform.transformPoint( rThisShape.getPoint( 1 ) ), rOtherTransform.transformPoint( rOtherShape.getPoint( iOtherPoint ) ) );
-		fCross = 0.f;
-		iOBBNextPoint = 0;
-		bOtherPointInShape = true;
-
-		for( int iOBBPoint = 1; iOBBPoint < rThisShape.getPointCount(); ++iOBBPoint )
-		{
-			iOBBNextPoint = ( iOBBPoint + 1 ) % rThisShape.getPointCount();
-			fCross = fzn::Tools::Cross2D( rThisTransform.transformPoint( rThisShape.getPoint( iOBBPoint ) ), rThisTransform.transformPoint( rThisShape.getPoint( iOBBNextPoint ) ), rOtherTransform.transformPoint( rOtherShape.getPoint( iOtherPoint ) ) );
-
-			// If the multiplication results in a negative number, the two values have an opposite sign and so, the point is out of the bounding box.
-			if( fCross * fLastCross < 0.f )
-			{
-				bOtherPointInShape = false;
-				break;
-			}
-
-			if( fCross != 0.f )
-				fLastCross = fCross;
-		}
-
-		if( bOtherPointInShape )
-		{
-			_rCollisionPoint.m_vContactPoint = rOtherTransform.transformPoint( rOtherShape.getPoint( iOtherPoint ) );
-			_rCollisionPoint.m_vCollisionResponse = _rRigidBody.m_vVelocity * -1.f;
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void RigidBody::_OnCollision( const CollisionPoint& _rCollision )
 {
 	m_vVelocity += _rCollision.m_vCollisionResponse;
@@ -352,6 +240,51 @@ void RigidBody::_ComputeNormals()
 		m_aNormals[ iPoint ].x = vSegment.y;
 		m_aNormals[ iPoint ].y = vSegment.x * -1.f;
 	}
+}
+
+void RigidBody::_ComputeMovementBounds()
+{
+	const sf::Vector2f vBasePosition{ GetPosition() };
+
+	const sf::FloatRect oBaseBounds{ m_pShape->getGlobalBounds() };
+
+	m_pShape->setPosition( vBasePosition + m_vVelocity * FrameTime );
+
+	const sf::FloatRect oNextPosBounds{ m_pShape->getGlobalBounds() };
+
+	const sf::FloatRect* pLeftMostBounds{ nullptr };
+	const sf::FloatRect* pTopMostBounds{ nullptr };
+	const sf::FloatRect* pRightMostBounds{ nullptr };
+	const sf::FloatRect* pBottomMostBounds{ nullptr };
+
+	if( oBaseBounds.left < oNextPosBounds.left )
+	{
+		pLeftMostBounds = &oBaseBounds;
+		pRightMostBounds = &oNextPosBounds;
+	}
+	else
+	{
+		pLeftMostBounds = &oNextPosBounds;
+		pRightMostBounds = &oBaseBounds;
+	}
+
+	if( oBaseBounds.top < oNextPosBounds.top )
+	{
+		pTopMostBounds = &oBaseBounds;
+		pBottomMostBounds = &oNextPosBounds;
+	}
+	else
+	{
+		pTopMostBounds = &oNextPosBounds;
+		pBottomMostBounds = &oBaseBounds;
+	}
+
+	m_oMouvementBounds.left = pLeftMostBounds->left;
+	m_oMouvementBounds.top = pTopMostBounds->top;
+	m_oMouvementBounds.width = (pRightMostBounds->left - pLeftMostBounds->left) + pRightMostBounds->width;
+	m_oMouvementBounds.height = ( pBottomMostBounds->top - pTopMostBounds->top ) + pBottomMostBounds->height;
+
+	m_pShape->setPosition( vBasePosition );
 }
 
 Wheel::Wheel()
@@ -404,9 +337,9 @@ Wheel::~Wheel()
 	g_pFZN_Core->RemoveCallback( this, &Wheel::OnEvent, fzn::DataCallbackType::Event );
 }
 
-void Wheel::Update( float _fGravity )
+void Wheel::Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies )
 {
-	RigidBody::Update( _fGravity );
+	RigidBody::Update( _fGravity, _daRigidBodies );
 
 	m_oLastPosCircle.setPosition( m_vLastPos );
 }
@@ -463,28 +396,17 @@ void PhysicsTest::Update()
 	const float fGravity = 981.f;
 	sf::Vector2f vMousePos = g_pFZN_WindowMgr->GetMousePosition();
 
+	FZN_LOG( "%f", fzn::Math::VectorAngle360( { 1.f, 0.f }, { 0.f, 1.f } ) );
+	FZN_LOG( "%f", fzn::Math::VectorAngle360( { 1.f, 0.f }, { 0.f, -1.f } ) );
+
 	for( Wheel* pWheel : m_aWheels )
 	{
 		if( pWheel == m_pDraggedWheel )
 			continue;
 
-		pWheel->Update( fGravity );
+		_LookForCollisions( pWheel );
 
-		for( const RigidBody* pRigidBody : m_daRigidBodies )
-		{
-			if( pRigidBody == pWheel )
-				continue;
-
-			if( pWheel->IsColliding_SAT( *pRigidBody, m_oCollisionPoint ) )
-			{
-				PhysicsEvent* pEvent = new PhysicsEvent( PhysicsEvent::Type::Collision );
-				pEvent->m_oCollisionEvent.m_oCollisionPoint = m_oCollisionPoint;
-				pEvent->m_oCollisionEvent.m_pRigidBodyA = pWheel;
-				pEvent->m_oCollisionEvent.m_pRigidBodyB = pRigidBody;
-
-				g_pFZN_Core->PushEvent( pEvent );
-			}
-		}
+		pWheel->Update( fGravity, m_daRigidBodies );
 		/*if( m_oGround.IsColliding( rWheel, m_oCollisionPoint ) )
 		{
 			PhysicsEvent* pEvent = new PhysicsEvent( PhysicsEvent::Type::Collision );
@@ -530,10 +452,12 @@ void PhysicsTest::Update()
 		if( g_pFZN_InputMgr->IsKeyDown( sf::Keyboard::Left ) )
 		{
 			pWheel->AddImpulse( { -20.f, 0.f } );
+			pWheel->m_bUpdateLastPos = true;
 		}
 		else if( g_pFZN_InputMgr->IsKeyDown( sf::Keyboard::Right ) )
 		{
 			pWheel->AddImpulse( { 20.f, 0.f } );
+			pWheel->m_bUpdateLastPos = true;
 		}
 	}
 
@@ -553,6 +477,9 @@ void PhysicsTest::Update()
 		m_pDraggedWheel->m_bUpdateLastPos = true;
 		m_pDraggedWheel = nullptr;
 	}
+
+	if( g_pFZN_InputMgr->IsKeyPressed( sf::Keyboard::F9 ) )
+		DebugBreak();
 }
 
 void PhysicsTest::Display()
@@ -576,4 +503,23 @@ void PhysicsTest::Display()
 	g_pFZN_WindowMgr->Draw( oCollision );
 	g_pFZN_WindowMgr->Draw( oCollisionResponse );
 
+}
+
+void PhysicsTest::_LookForCollisions( const RigidBody* _pRigidBody )
+{
+	for( const RigidBody* pRigidBody : m_daRigidBodies )
+	{
+		if( pRigidBody == _pRigidBody )
+			continue;
+
+		if( _pRigidBody->IsColliding( *pRigidBody, m_oCollisionPoint ) )
+		{
+			PhysicsEvent* pEvent = new PhysicsEvent( PhysicsEvent::Type::Collision );
+			pEvent->m_oCollisionEvent.m_oCollisionPoint = m_oCollisionPoint;
+			pEvent->m_oCollisionEvent.m_pRigidBodyA = _pRigidBody;
+			pEvent->m_oCollisionEvent.m_pRigidBodyB = pRigidBody;
+
+			g_pFZN_Core->PushEvent( pEvent );
+		}
+	}
 }

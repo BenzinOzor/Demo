@@ -8,6 +8,7 @@ namespace sf
 
 class RigidBody
 {
+	friend class PhysicsTest;
 public:
 	struct CollisionPoint
 	{
@@ -17,11 +18,11 @@ public:
 
 	RigidBody();
 
-	virtual void Update( float _fGravity );
+	virtual void Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies );
 	virtual void Display();
 	virtual void OnEvent();
 
-	bool IsColliding( const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint ) const;
+	bool IsColliding( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const;
 	bool IsColliding_SAT( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const;
 	virtual void AddImpulse( const sf::Vector2f& _vImpulse );
 
@@ -36,12 +37,10 @@ public:
 	}
 
 protected:
-	bool _Sweep();
-	bool _IsCollidingDuringSweep( const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint, float _fRadius ) const;
-	virtual bool IsColliding( const sf::Vector2f& _vRigidBodyTestPos, const RigidBody& _rRigidBody, CollisionPoint& _rCollisionPoint ) const;
 	virtual void _OnCollision( const CollisionPoint& _rCollision );
 
 	void _ComputeNormals();
+	void _ComputeMovementBounds();
 
 	sf::Shape* m_pShape{ nullptr };
 	std::vector< sf::Vector2f > m_aNormals;
@@ -50,6 +49,7 @@ protected:
 	sf::Vector2f m_vLastPos{ 0.f, 0.f };
 	float fLastPosLength{ 0.f };
 	bool m_bUpdateLastPos{ true };
+	sf::FloatRect m_oMouvementBounds;
 };
 
 class Wheel : public RigidBody
@@ -60,7 +60,7 @@ public:
 	Wheel( const Wheel& _rWheel );
 	~Wheel();
 
-	virtual void Update( float _fGravity ) override;
+	virtual void Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies ) override;
 	virtual void Display() override;
 	bool IsHovered( const sf::Vector2f& _vMousePos );
 
@@ -88,6 +88,8 @@ public:
 	const Ground& GetGround() const { return m_oGround; }
 
 protected:
+	void _LookForCollisions( const RigidBody* _pRigidBody );
+
 	Ground m_oGround;
 	std::vector< Wheel* > m_aWheels;
 
