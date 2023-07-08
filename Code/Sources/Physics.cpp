@@ -9,8 +9,184 @@
 
 PhysicsTest* g_pPhysics = nullptr;
 
+//=======================================================
+/// MATH FUNCTIONS TO MOVE IN FZN
+//=======================================================
+#pragma region Math
+bool VectorsSameDirection( const sf::Vector2f& _vVectorA, const sf::Vector2f& _vVectorB )
+{
+	return fzn::Math::VectorDot( _vVectorA, _vVectorB ) >= 0.f;
+}
+
+bool VectorsPerpendicular( const sf::Vector2f& _vVectorA, const sf::Vector2f& _vVectorB )
+{
+	return fzn::Math::VectorDot( _vVectorA, _vVectorB ) == 0.f;
+}
+
+sf::Vector2f GetPerpendicularVector( const sf::Vector2f& _vSegment, const sf::Vector2f& _vDirection )
+{
+	sf::Vector3f vSegment3D{ _vSegment.x, _vSegment.y, 0.f };
+	sf::Vector3f vCross = fzn::Math::VectorCross( vSegment3D, { _vDirection.x, _vDirection.y, 0.f } );
+	sf::Vector3f vResult3D = fzn::Math::VectorCross( vCross, vSegment3D );
+
+	return { vResult3D.x, vResult3D.y };
+}
+
+sf::Vector2f GetFarthestPointInDirection( const sf::Shape* _pShape, const sf::Vector2f& _vDirection )
+{
+	if( _pShape == nullptr )
+		return { 0.f, 0.f };
+
+	float fMaxProj = -FLT_MAX;
+	float fDot{ 0.f };
+	sf::Vector2f vFarthestPoint{ 0.f, 0.f };
+	sf::Vector2f vCurrentPoint{ 0.f, 0.f };
+
+	const sf::Transform& rTransform = _pShape->getTransform();
+
+	for( int iPoint = 0; iPoint < _pShape->getPointCount(); ++iPoint )
+	{
+		vCurrentPoint = rTransform.transformPoint( _pShape->getPoint( iPoint ) );
+		fDot = fzn::Math::VectorDot( _vDirection, vCurrentPoint );
+
+		if( fMaxProj < fDot )
+		{
+			fMaxProj = fDot;
+			vFarthestPoint = vCurrentPoint;
+		}
+	}
+
+	return vFarthestPoint;
+}
+
+sf::Vector2f GetSupportPoint( const sf::Shape* _pShapeA, const sf::Shape* _pShapeB, const sf::Vector2f& _vDirection )
+{
+	if( _pShapeA == nullptr || _pShapeB == nullptr )
+		return { 0.f, 0.f };
+
+	// Get points on the edge of the shapes in opposite directions
+	const sf::Vector2f vPointA = GetFarthestPointInDirection( _pShapeA, _vDirection );
+	const sf::Vector2f vPointB = GetFarthestPointInDirection( _pShapeB, -_vDirection );
+
+	return vPointA - vPointB;
+}
+
+// Returns true if intersection
+bool DoSimplex( std::vector< sf::Vector2f >& _vSimplex, sf::Vector2f& _vDirection )
+{
+	auto DoSimplexLine = []( std::vector< sf::Vector2f >&_vSimplex, sf::Vector2f & _vDirection )
+	{
+		const sf::Vector2f& vNewestPoint = _vSimplex.back();
+		const sf::Vector2f vToOrigin = -vNewestPoint;
+		const sf::Vector2f vLine = _vSimplex[ 0 ] - vNewestPoint;
+
+		if( VectorsSameDirection( vLine, vToOrigin ) )
+		{
+			_vDirection = GetPerpendicularVector( vLine, vToOrigin );
+		}
+		else
+			_vDirection = vToOrigin;
+	};
+
+	auto DoSimplexTriangle = []( std::vector< sf::Vector2f >& _vSimplex, sf::Vector2f& _vDirection ) -> bool
+	{
+		std::vector< sf::Vector2f > vTriangle( 3 );
+		const sf::Vector2f& vNewestPoint = _vSimplex.back();
+		const sf::Vector2f& vPreviousPoint1 = _vSimplex[ _vSimplex.size() - 2 ];
+		const sf::Vector2f& vPreviousPoint2 = _vSimplex[ _vSimplex.size() - 3 ];
+		vTriangle[ 0 ] = vPreviousPoint1;
+		vTriangle[ 1 ] = vPreviousPoint2;
+		vTriangle[ 2 ] = vNewestPoint;
+
+		// Is the origin in the current triangle
+		if( fzn::Tools::CollisionOBBPoint( vTriangle, { 0.f, 0.f } ) )
+			return true;
+
+		const sf::Vector2f vToOrigin = -vNewestPoint;
+		const sf::Vector2f vLine1 = vPreviousPoint1 - vNewestPoint;
+		const sf::Vector2f vLine2 = vPreviousPoint2 - vNewestPoint;
+
+		const sf::Vector3f vLine1_3D{ vLine1.x, vLine1.y, 0.f };
+		const sf::Vector3f vLine2_3D{ vLine2.x, vLine2.y, 0.f };
+
+		const sf::Vector3f vPlane = fzn::Math::VectorCross( vLine1_3D, vLine2_3D );
+		sf::Vector3f vNormale3D = fzn::Math::VectorCross( vPlane, vLine1_3D );
+		sf::Vector2f vNormale2D{ vNormale3D.x, vNormale3D.y };
+
+		// ABC x AB . AO && AB . AO
+		if( VectorsSameDirection( vNormale2D, vToOrigin ) && VectorsSameDirection( vLine1, vToOrigin ) )
+		{
+			_vDirection = GetPerpendicularVector( vLine1, vToOrigin );
+			return false;
+		}
+		else
+		{
+			vNormale3D = fzn::Math::VectorCross( vPlane, vLine2_3D );
+			vNormale2D = { vNormale3D.x, vNormale3D.y };
+
+			// ABC x AC . AO && AC . AO
+			if( VectorsSameDirection( vNormale2D, vToOrigin ) && VectorsSameDirection( vLine2, vToOrigin ) )
+			{
+				_vDirection = GetPerpendicularVector( vLine2, vToOrigin );
+				return false;
+			}
+		}
+
+		_vDirection = vToOrigin;
+		return false;
+	};
+
+	if( _vSimplex.size() < 2 )
+		return false;
+
+	if( _vSimplex.size() == 2 )
+	{
+		DoSimplexLine( _vSimplex, _vDirection );
+		return false;
+	}
+	else
+		return DoSimplexTriangle( _vSimplex, _vDirection );
+}
+#pragma endregion
+
+#pragma region Tools
+bool GJKIntersection( std::vector< sf::Vector2f >& _vSimplex, const sf::Shape* _pShapeA, const sf::Shape* _pShapeB )
+{
+	//std::vector< sf::Vector2f > vSimplex;
+	sf::Vector2f vSupportPoint = GetSupportPoint( _pShapeA, _pShapeB, { 1.f, 0.f } );
+	sf::Vector2f vDirection = -vSupportPoint;
+
+	_vSimplex.push_back( vSupportPoint );
+
+	bool bLookForIntersection = true;
+
+	while( bLookForIntersection )
+	{
+		sf::Vector2f vNewPoint = GetSupportPoint( _pShapeA, _pShapeB, vDirection );
+
+		if( VectorsSameDirection( vDirection, vNewPoint ) == false )
+			return false;
+
+		_vSimplex.push_back( vNewPoint );
+
+		if( DoSimplex( _vSimplex, vDirection ) )
+			return true;
+
+		if( _vSimplex.size() >= 30 )
+		{
+			FZN_LOG( "SIMPLEX FULL !!!!!!!!!!!!!!!!!!!" );
+			return false;
+		}
+	}
+
+	return false;
+}
+#pragma endregion
+
+
 RigidBody::RigidBody()
 {
+	
 }
 
 void RigidBody::Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies )
@@ -18,13 +194,7 @@ void RigidBody::Update( float _fGravity, const std::vector< RigidBody* >& _daRig
 	if( m_bUpdateLastPos )
 		m_vLastPos = GetPosition();
 
-	SetPosition( GetPosition() + m_vVelocity * FrameTime );
-
-	if( dynamic_cast< Wheel* >( this ) && m_vVelocity.y != 0.f )
-	{
-		FZN_LOG( "Velocity: %f", m_vVelocity.y );
-	}
-	m_vVelocity += sf::Vector2f( 0.f, _fGravity ) * FrameTime;
+	//SetPosition( GetPosition() + m_vVelocity * FrameTime );
 
 	_ComputeMovementBounds();
 
@@ -34,29 +204,31 @@ void RigidBody::Update( float _fGravity, const std::vector< RigidBody* >& _daRig
 
 void RigidBody::Display()
 {
-	if( m_pShape != nullptr )
+	if( m_pShape == nullptr )
+		return;
+
+	g_pFZN_WindowMgr->Draw( *m_pShape );
+
+	fzn::Tools::DrawLine( m_pShape->getPosition(), m_pShape->getPosition() + m_vLastImpulse, sf::Color::Green );
+	fzn::Tools::DrawLine( m_pShape->getPosition(), m_pShape->getPosition() + m_vVelocity * FrameTime, sf::Color::Cyan );
+
+	int iNextPoint{ 0 };
+	sf::Vector2f vMiddlePoint{ 0.f, 0.f };
+	sf::Vector2f vPointA{ 0.f, 0.f };
+	sf::Vector2f vPointB{ 0.f, 0.f };
+
+	for( int iPoint = 0; iPoint < m_pShape->getPointCount(); ++iPoint )
 	{
-		g_pFZN_WindowMgr->Draw( *m_pShape );
+		iNextPoint = ( iPoint + 1 ) % m_pShape->getPointCount();
 
-		fzn::Tools::DrawLine( m_pShape->getPosition(), m_pShape->getPosition() + m_vLastImpulse, sf::Color::Green );
-		fzn::Tools::DrawLine( m_pShape->getPosition(), m_pShape->getPosition() + m_vVelocity * FrameTime, sf::Color::Cyan );
+		vPointA = m_pShape->getTransform().transformPoint( m_pShape->getPoint( iPoint ) );
+		vPointB = m_pShape->getTransform().transformPoint( m_pShape->getPoint( iNextPoint ) );
+		vMiddlePoint.x = ( vPointA.x + vPointB.x ) / 2.f;
+		vMiddlePoint.y = ( vPointA.y + vPointB.y ) / 2.f;
 
-		int iNextPoint{ 0 };
-		sf::Vector2f vMiddlePoint{ 0.f, 0.f };
-		sf::Vector2f vPointA{ 0.f, 0.f };
-		sf::Vector2f vPointB{ 0.f, 0.f };
+		fzn::Tools::DrawLine( vMiddlePoint, vMiddlePoint + m_aNormals[ iPoint ] * 3.f, sf::Color::Magenta );
 
-		for( int iPoint = 0; iPoint < m_pShape->getPointCount(); ++iPoint )
-		{
-			iNextPoint = ( iPoint + 1 ) % m_pShape->getPointCount();
-
-			vPointA = m_pShape->getTransform().transformPoint( m_pShape->getPoint( iPoint ) );
-			vPointB = m_pShape->getTransform().transformPoint( m_pShape->getPoint( iNextPoint ) );
-			vMiddlePoint.x = ( vPointA.x + vPointB.x ) / 2.f;
-			vMiddlePoint.y = ( vPointA.y + vPointB.y ) / 2.f;
-
-			fzn::Tools::DrawLine( vMiddlePoint, vMiddlePoint + m_aNormals[ iPoint ] * 3.f, sf::Color::Magenta );
-		}
+		fzn::Tools::DrawString( fzn::Tools::Sprintf( "%.0f;%.0f", vPointA.x, vPointA.y ).c_str(), vPointA, 12 );
 	}
 
 	sf::RectangleShape oNextPosBounds( { m_oMouvementBounds.width, m_oMouvementBounds.height } );
@@ -65,8 +237,12 @@ void RigidBody::Display()
 	oNextPosBounds.setOutlineThickness( 1.f );
 	oNextPosBounds.setPosition( m_oMouvementBounds.left, m_oMouvementBounds.top );
 
-	g_pFZN_WindowMgr->Draw( oNextPosBounds );
+	/*auto rGlobalBOunds = m_pShape->getGlobalBounds();
 
+	oNextPosBounds.setSize( { rGlobalBOunds.width, rGlobalBOunds.height } );
+	oNextPosBounds.setPosition( rGlobalBOunds.left, rGlobalBOunds.top );*/
+
+	//g_pFZN_WindowMgr->Draw( oNextPosBounds );
 }
 
 void RigidBody::OnEvent()
@@ -83,6 +259,11 @@ void RigidBody::OnEvent()
 		if( pPhyEvent->m_oCollisionEvent.m_pRigidBodyA == this || pPhyEvent->m_oCollisionEvent.m_pRigidBodyB == this )
 			_OnCollision( pPhyEvent->m_oCollisionEvent.m_oCollisionPoint );
 	}
+}
+
+bool RigidBody::IsHovered( const sf::Vector2f& _vMousePos )
+{
+	return fzn::Tools::CollisionOBBPoint( *m_pShape, _vMousePos );
 }
 
 bool RigidBody::IsColliding( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const
@@ -206,6 +387,14 @@ bool RigidBody::HasVelocity() const
 	return fzn::Math::VectorLengthSq( m_vVelocity ) > 0.f;
 }
 
+sf::FloatRect RigidBody::GetGlobalBounds() const
+{
+	if( m_pShape == nullptr )
+		return sf::FloatRect();
+
+	return m_pShape->getGlobalBounds();
+}
+
 void RigidBody::_OnCollision( const CollisionPoint& _rCollision )
 {
 	m_vVelocity += _rCollision.m_vCollisionResponse;
@@ -215,6 +404,11 @@ void RigidBody::_OnCollision( const CollisionPoint& _rCollision )
 		FZN_LOG( "COLLISION %f", _rCollision.m_vContactPoint.y );
 		m_bUpdateLastPos = false;
 	}
+}
+
+void RigidBody::_ComputeVelocity( float _fGravity )
+{
+	m_vVelocity += sf::Vector2f( 0.f, _fGravity ) * FrameTime;
 }
 
 void RigidBody::_ComputeNormals()
@@ -381,6 +575,20 @@ Ground::Ground()
 	g_pFZN_Core->AddCallback( this, &Ground::OnEvent, fzn::DataCallbackType::Event );
 }
 
+TestShape::TestShape()
+{
+	m_pShape = new sf::CircleShape( 80.f, 9 );
+
+	m_pShape->setFillColor( { 255, 255, 255, 100 } );
+	m_pShape->setOutlineColor( sf::Color::White );
+	m_pShape->setOutlineThickness( 1.f );
+
+	if( sf::CircleShape* pCircleShape = static_cast<sf::CircleShape*>( m_pShape ) )
+		m_pShape->setOrigin( { pCircleShape->getRadius(), pCircleShape->getRadius() } );
+
+	_ComputeNormals();
+}
+
 PhysicsTest::PhysicsTest()
 {
 	g_pFZN_Core->AddCallback( this, &PhysicsTest::Update, fzn::DataCallbackType::Update );
@@ -393,18 +601,26 @@ PhysicsTest::PhysicsTest()
 
 void PhysicsTest::Update()
 {
+	m_daSimplex.clear();
+
 	const float fGravity = 981.f;
 	sf::Vector2f vMousePos = g_pFZN_WindowMgr->GetMousePosition();
-
-	FZN_LOG( "%f", fzn::Math::VectorAngle360( { 1.f, 0.f }, { 0.f, 1.f } ) );
-	FZN_LOG( "%f", fzn::Math::VectorAngle360( { 1.f, 0.f }, { 0.f, -1.f } ) );
 
 	for( Wheel* pWheel : m_aWheels )
 	{
 		if( pWheel == m_pDraggedWheel )
 			continue;
+	
+		//pWheel->_ComputeVelocity( fGravity );
+	}
 
-		_LookForCollisions( pWheel );
+	_CollisionDetection();
+
+	for( RigidBody* pWheel : m_daRigidBodies )
+	{
+		if( pWheel == m_pDraggedWheel )
+			continue;
+
 
 		pWheel->Update( fGravity, m_daRigidBodies );
 		/*if( m_oGround.IsColliding( rWheel, m_oCollisionPoint ) )
@@ -463,9 +679,11 @@ void PhysicsTest::Update()
 
 	if( g_pFZN_InputMgr->IsMousePressed( sf::Mouse::Left ) && m_pDraggedWheel == nullptr )
 	{
-		m_aWheels.push_back( new Wheel() );
-		m_aWheels.back()->SetPosition( vMousePos );
-		m_daRigidBodies.push_back( m_aWheels.back() );
+		//m_aWheels.push_back( new Wheel() );
+		//m_aWheels.back()->SetPosition( vMousePos );
+		//m_daRigidBodies.push_back( m_aWheels.back() );
+		m_daRigidBodies.push_back( new TestShape() );
+		m_daRigidBodies.back()->SetPosition( vMousePos );
 	}
 
 	if( g_pFZN_InputMgr->IsMouseDown( sf::Mouse::Left ) && m_pDraggedWheel != nullptr )
@@ -484,10 +702,13 @@ void PhysicsTest::Update()
 
 void PhysicsTest::Display()
 {
-	m_oGround.Display();
+	/*m_oGround.Display();
 
 	for( Wheel* pWheel : m_aWheels )
-		pWheel->Display();
+		pWheel->Display();*/
+
+	for( RigidBody* pRigidBody : m_daRigidBodies )
+		pRigidBody->Display();
 
 	sf::CircleShape oCollision( 2.5f );
 	oCollision.setFillColor( sf::Color::Yellow );
@@ -503,16 +724,35 @@ void PhysicsTest::Display()
 	g_pFZN_WindowMgr->Draw( oCollision );
 	g_pFZN_WindowMgr->Draw( oCollisionResponse );
 
+	sf::VertexArray oSimplex( sf::LinesStrip, m_daSimplex.size() );
+
+	for( int i = 0; i < oSimplex.getVertexCount(); ++i )
+	{
+		oSimplex[ i ].color = sf::Color::Red;
+		oSimplex[ i ].position = m_daSimplex[ i ];
+	}
+
+
+	g_pFZN_WindowMgr->Draw( oSimplex );
 }
 
-void PhysicsTest::_LookForCollisions( const RigidBody* _pRigidBody )
+void PhysicsTest::_CollisionDetection()
 {
-	for( const RigidBody* pRigidBody : m_daRigidBodies )
-	{
-		if( pRigidBody == _pRigidBody )
-			continue;
+	_GenerateRigidBodyPairs();
 
-		if( _pRigidBody->IsColliding( *pRigidBody, m_oCollisionPoint ) )
+	if( m_daRigidBodyPairs.empty() )
+		return;
+
+	for( auto& rPair : m_daRigidBodyPairs )
+	{
+		/*if( fzn::Tools::CollisionAABBAABB( rPair.first->GetGlobalBounds(), rPair.second->GetGlobalBounds() ) == false )
+			continue;*/
+
+		if( GJKIntersection( m_daSimplex, rPair.first->m_pShape, rPair.second->m_pShape ) )
+			FZN_LOG( "COLLISION !! %s", fzn::Tools::FormatedTimer( g_pFZN_Core->GetGlobalTime().asSeconds() ).c_str() );
+	}
+
+	/*if( _pRigidBody->IsColliding( *pRigidBody, m_oCollisionPoint ) )
 		{
 			PhysicsEvent* pEvent = new PhysicsEvent( PhysicsEvent::Type::Collision );
 			pEvent->m_oCollisionEvent.m_oCollisionPoint = m_oCollisionPoint;
@@ -520,6 +760,47 @@ void PhysicsTest::_LookForCollisions( const RigidBody* _pRigidBody )
 			pEvent->m_oCollisionEvent.m_pRigidBodyB = pRigidBody;
 
 			g_pFZN_Core->PushEvent( pEvent );
+	}*/
+}
+
+void PhysicsTest::_GenerateRigidBodyPairs()
+{
+	struct RigidBodyBound
+	{
+		bool bBegginning{ true };
+		float fScalarValue{ 0.f };
+		const RigidBody* pRigidBody{ nullptr };
+	};
+
+	std::vector< RigidBodyBound > daBounds;
+	daBounds.reserve( m_daRigidBodies.size() * 2.f );
+
+	for( const RigidBody* pRigidBody : m_daRigidBodies )
+	{
+		sf::FloatRect oBounds = pRigidBody->GetGlobalBounds();
+
+		if( oBounds.width <= 0.f || oBounds.height <= 0.f )
+			continue;
+
+		daBounds.push_back( { true, oBounds.top, pRigidBody } );
+		daBounds.push_back( { false, oBounds.top + oBounds.height, pRigidBody } );
+	}
+
+	std::sort( daBounds.begin(), daBounds.end(), []( const RigidBodyBound& _rBoundA, const RigidBodyBound& _rBoundB ) { return _rBoundA.fScalarValue < _rBoundB.fScalarValue; } );
+
+	m_daRigidBodyPairs.clear();
+	RigidBodiesConst daActiveRigidBodies;
+
+	for( const RigidBodyBound& rBound : daBounds )
+	{
+		if( rBound.bBegginning )
+		{
+			for( const RigidBody* pRigidBody : daActiveRigidBodies )
+				m_daRigidBodyPairs.push_back( { pRigidBody, rBound.pRigidBody } );
+
+			daActiveRigidBodies.push_back( rBound.pRigidBody );
 		}
+		else
+			daActiveRigidBodies.erase( std::find( daActiveRigidBodies.begin(), daActiveRigidBodies.end(), rBound.pRigidBody ) );
 	}
 }

@@ -22,6 +22,8 @@ public:
 	virtual void Display();
 	virtual void OnEvent();
 
+	virtual bool IsHovered( const sf::Vector2f& _vMousePos );
+
 	bool IsColliding( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const;
 	bool IsColliding_SAT( const RigidBody& _rRigiBody, CollisionPoint& _rCollisionPoint ) const;
 	virtual void AddImpulse( const sf::Vector2f& _vImpulse );
@@ -29,6 +31,7 @@ public:
 	void SetPosition( const sf::Vector2f& _vPosition );
 	sf::Vector2f GetPosition() const;
 	bool HasVelocity() const;
+	sf::FloatRect GetGlobalBounds() const;
 
 	template< typename T >
 	T GetShape() const
@@ -39,6 +42,7 @@ public:
 protected:
 	virtual void _OnCollision( const CollisionPoint& _rCollision );
 
+	void _ComputeVelocity( float _fGravity );
 	void _ComputeNormals();
 	void _ComputeMovementBounds();
 
@@ -62,7 +66,7 @@ public:
 
 	virtual void Update( float _fGravity, const std::vector< RigidBody* >& _daRigidBodies ) override;
 	virtual void Display() override;
-	bool IsHovered( const sf::Vector2f& _vMousePos );
+	virtual bool IsHovered( const sf::Vector2f& _vMousePos ) override;
 
 protected:
 	sf::CircleShape m_oLastPosCircle;
@@ -72,6 +76,15 @@ class Ground : public RigidBody
 {
 public:
 	Ground();
+
+protected:
+	virtual void _OnCollision( const CollisionPoint& _rCollision ) override {}
+};
+
+class TestShape : public RigidBody
+{
+public:
+	TestShape();
 
 protected:
 	virtual void _OnCollision( const CollisionPoint& _rCollision ) override {}
@@ -88,15 +101,24 @@ public:
 	const Ground& GetGround() const { return m_oGround; }
 
 protected:
-	void _LookForCollisions( const RigidBody* _pRigidBody );
+	using RigidBodyPair		= std::pair< const RigidBody*, const RigidBody* >;
+	using RigidBodyPairs	= std::vector< RigidBodyPair >;
+	using RigidBodies		= std::vector< RigidBody* >;
+	using RigidBodiesConst	= std::vector< const RigidBody* >;
+
+	void _CollisionDetection();
+	void _GenerateRigidBodyPairs();
 
 	Ground m_oGround;
 	std::vector< Wheel* > m_aWheels;
 
-	std::vector< RigidBody* > m_daRigidBodies;
+	RigidBodies		m_daRigidBodies;
+	RigidBodyPairs	m_daRigidBodyPairs;
 
 	RigidBody::CollisionPoint m_oCollisionPoint;
-	Wheel* m_pDraggedWheel{ nullptr };
+	RigidBody* m_pDraggedWheel{ nullptr };
+
+	std::vector< sf::Vector2f > m_daSimplex;
 };
 
 extern PhysicsTest* g_pPhysics;
