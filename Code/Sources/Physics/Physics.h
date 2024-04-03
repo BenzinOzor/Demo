@@ -117,8 +117,6 @@ protected:
 
 	RigidBody::CollisionPoint m_oCollisionPoint;
 	RigidBody* m_pDraggedWheel{ nullptr };
-
-	std::vector< sf::Vector2f > m_daSimplex;
 };
 
 extern PhysicsTest* g_pPhysics;

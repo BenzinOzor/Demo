@@ -6,6 +6,7 @@
 #include <SFML/Graphics/CircleShape.hpp>
 
 #include "Physics.h"
+#include "Simplex.h"
 
 PhysicsTest* g_pPhysics = nullptr;
 
@@ -150,13 +151,13 @@ bool DoSimplex( std::vector< sf::Vector2f >& _vSimplex, sf::Vector2f& _vDirectio
 #pragma endregion
 
 #pragma region Tools
-bool GJKIntersection( std::vector< sf::Vector2f >& _vSimplex, const sf::Shape* _pShapeA, const sf::Shape* _pShapeB )
+bool GJKIntersection( const sf::Shape* _pShapeA, const sf::Shape* _pShapeB )
 {
-	//std::vector< sf::Vector2f > vSimplex;
+	Simplex oSimplex;
 	sf::Vector2f vSupportPoint = GetSupportPoint( _pShapeA, _pShapeB, { 1.f, 0.f } );
 	sf::Vector2f vDirection = -vSupportPoint;
 
-	_vSimplex.push_back( vSupportPoint );
+	oSimplex.AddPoint( vSupportPoint );
 
 	bool bLookForIntersection = true;
 
@@ -167,16 +168,10 @@ bool GJKIntersection( std::vector< sf::Vector2f >& _vSimplex, const sf::Shape* _
 		if( VectorsSameDirection( vDirection, vNewPoint ) == false )
 			return false;
 
-		_vSimplex.push_back( vNewPoint );
+		oSimplex.AddPoint( vNewPoint );
 
-		if( DoSimplex( _vSimplex, vDirection ) )
+		if( oSimplex.ContainsOrigin( vDirection ) )
 			return true;
-
-		if( _vSimplex.size() >= 30 )
-		{
-			FZN_LOG( "SIMPLEX FULL !!!!!!!!!!!!!!!!!!!" );
-			return false;
-		}
 	}
 
 	return false;
@@ -194,7 +189,7 @@ void RigidBody::Update( float _fGravity, const std::vector< RigidBody* >& _daRig
 	if( m_bUpdateLastPos )
 		m_vLastPos = GetPosition();
 
-	//SetPosition( GetPosition() + m_vVelocity * FrameTime );
+	SetPosition( GetPosition() + m_vVelocity * FrameTime );
 
 	_ComputeMovementBounds();
 
@@ -227,8 +222,6 @@ void RigidBody::Display()
 		vMiddlePoint.y = ( vPointA.y + vPointB.y ) / 2.f;
 
 		fzn::Tools::DrawLine( vMiddlePoint, vMiddlePoint + m_aNormals[ iPoint ] * 3.f, sf::Color::Magenta );
-
-		fzn::Tools::DrawString( fzn::Tools::Sprintf( "%.0f;%.0f", vPointA.x, vPointA.y ).c_str(), vPointA, 12 );
 	}
 
 	sf::RectangleShape oNextPosBounds( { m_oMouvementBounds.width, m_oMouvementBounds.height } );
@@ -577,7 +570,7 @@ Ground::Ground()
 
 TestShape::TestShape()
 {
-	m_pShape = new sf::CircleShape( 80.f, 9 );
+	m_pShape = new sf::CircleShape( 80.f, 3 );
 
 	m_pShape->setFillColor( { 255, 255, 255, 100 } );
 	m_pShape->setOutlineColor( sf::Color::White );
@@ -601,17 +594,15 @@ PhysicsTest::PhysicsTest()
 
 void PhysicsTest::Update()
 {
-	m_daSimplex.clear();
-
 	const float fGravity = 981.f;
 	sf::Vector2f vMousePos = g_pFZN_WindowMgr->GetMousePosition();
 
-	for( Wheel* pWheel : m_aWheels )
+	for( RigidBody* pWheel : m_daRigidBodies )
 	{
-		if( pWheel == m_pDraggedWheel )
+		if( pWheel == m_pDraggedWheel || pWheel == &m_oGround )
 			continue;
 	
-		//pWheel->_ComputeVelocity( fGravity );
+		pWheel->_ComputeVelocity( fGravity );
 	}
 
 	_CollisionDetection();
@@ -682,7 +673,7 @@ void PhysicsTest::Update()
 		//m_aWheels.push_back( new Wheel() );
 		//m_aWheels.back()->SetPosition( vMousePos );
 		//m_daRigidBodies.push_back( m_aWheels.back() );
-		m_daRigidBodies.push_back( new TestShape() );
+		m_daRigidBodies.push_back( new Wheel() );
 		m_daRigidBodies.back()->SetPosition( vMousePos );
 	}
 
@@ -723,17 +714,6 @@ void PhysicsTest::Display()
 
 	g_pFZN_WindowMgr->Draw( oCollision );
 	g_pFZN_WindowMgr->Draw( oCollisionResponse );
-
-	sf::VertexArray oSimplex( sf::LinesStrip, m_daSimplex.size() );
-
-	for( int i = 0; i < oSimplex.getVertexCount(); ++i )
-	{
-		oSimplex[ i ].color = sf::Color::Red;
-		oSimplex[ i ].position = m_daSimplex[ i ];
-	}
-
-
-	g_pFZN_WindowMgr->Draw( oSimplex );
 }
 
 void PhysicsTest::_CollisionDetection()
@@ -748,8 +728,17 @@ void PhysicsTest::_CollisionDetection()
 		/*if( fzn::Tools::CollisionAABBAABB( rPair.first->GetGlobalBounds(), rPair.second->GetGlobalBounds() ) == false )
 			continue;*/
 
-		if( GJKIntersection( m_daSimplex, rPair.first->m_pShape, rPair.second->m_pShape ) )
+		if( GJKIntersection( rPair.first->m_pShape, rPair.second->m_pShape ) )
+		{
 			FZN_LOG( "COLLISION !! %s", fzn::Tools::FormatedTimer( g_pFZN_Core->GetGlobalTime().asSeconds() ).c_str() );
+
+			PhysicsEvent* pEvent = new PhysicsEvent( PhysicsEvent::Type::Collision );
+			pEvent->m_oCollisionEvent.m_oCollisionPoint = m_oCollisionPoint;
+			pEvent->m_oCollisionEvent.m_pRigidBodyA = rPair.first;
+			pEvent->m_oCollisionEvent.m_pRigidBodyB = rPair.second;
+
+			g_pFZN_Core->PushEvent( pEvent );
+		}
 	}
 
 	/*if( _pRigidBody->IsColliding( *pRigidBody, m_oCollisionPoint ) )

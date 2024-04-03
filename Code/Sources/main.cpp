@@ -11,7 +11,7 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 
 #include "demo.h"
-#include "Physics.h"
+#include "Physics/Physics.h"
 
 int main()
 {

@@ -245,11 +245,13 @@
   <ItemGroup>
     <ClCompile Include="Sources\demo.cpp" />
     <ClCompile Include="Sources\main.cpp" />
-    <ClCompile Include="Sources\Physics.cpp" />
+    <ClCompile Include="Sources\Physics\Physics.cpp" />
+    <ClCompile Include="Sources\Physics\Simplex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\demo.h" />
-    <ClInclude Include="Sources\Physics.h" />
+    <ClInclude Include="Sources\Physics\Physics.h" />
+    <ClInclude Include="Sources\Physics\Simplex.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Data\XMLFiles\Resources" />

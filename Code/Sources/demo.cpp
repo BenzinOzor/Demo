@@ -540,7 +540,7 @@ void CollisionTest::Display()
 	oLine[ 4 ].position = oLine[ 0 ].position;
 	g_pFZN_WindowMgr->Draw( oLine );
 
-	fShapeRadius = 5.f;
+	fShapeRadius = 1.f;
 	oShape.setRadius( fShapeRadius );
 	oShape.setOrigin( { fShapeRadius, fShapeRadius } );
 
